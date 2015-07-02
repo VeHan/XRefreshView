@@ -76,6 +76,10 @@ public class XRefreshView extends LinearLayout {
 	private boolean mHasSendCancelEvent = false;
 	private boolean mHasSendDownEvent = false;
 	private Scroller mScroller;
+	/**
+	 * 底部加载更多的模式，0：释放刷新时会回弹 1：释放时不会回弹
+	 */
+	private int releaseModeAtBottom;
 
 	public XRefreshView(Context context) {
 		this(context, null);
@@ -102,16 +106,16 @@ public class XRefreshView extends LinearLayout {
 		mContentView.setOnTopRefreshTime(topListener);
 	}
 
-	/**
-	 * 设置底部加载更多时机
-	 * 
-	 * 现阶段XRefreshView对于上拉加载时机的判断仅支持api14也就是安卓4.0 以上的版本，
-	 * 如果想要兼容4.0以下，得调用此方法自己设置上拉加载的时机
-	 * 
-	 * @param bottomListener
-	 */
 	public void setOnBottomLoadMoreTime(OnBottomLoadMoreTime bottomListener) {
 		mContentView.setOnBottomLoadMoreTime(bottomListener);
+	}
+
+	/**
+	 * @see #releaseModeAtBottom
+	 * @param releaseModeAtBottom
+	 */
+	public void setReleaseModeAtBottom(int releaseModeAtBottom) {
+		this.releaseModeAtBottom = releaseModeAtBottom;
 	}
 
 	@Override
@@ -137,6 +141,8 @@ public class XRefreshView extends LinearLayout {
 						R.styleable.XRefreshView_isHeightMatchParent, true);
 				autoRefresh = a.getBoolean(
 						R.styleable.XRefreshView_autoRefresh, false);
+				releaseModeAtBottom = a.getInt(
+						R.styleable.XRefreshView_releaseModeAtBottom, 1);
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
@@ -193,10 +199,31 @@ public class XRefreshView extends LinearLayout {
 		int width = MeasureSpec.getSize(widthMeasureSpec);
 		int childCount = getChildCount();
 		int finalHeight = 0;
-		for (int i = 0; i < childCount; i++) {
-			View child = getChildAt(i);
-			measureChild(child, widthMeasureSpec, heightMeasureSpec);
-			finalHeight += child.getMeasuredHeight();
+		if (releaseModeAtBottom == 0) {// 回弹模式
+			for (int i = 0; i < childCount; i++) {
+				View child = getChildAt(i);
+				measureChild(child, widthMeasureSpec, heightMeasureSpec);
+				finalHeight += child.getMeasuredHeight();
+			}
+		} else {
+			View header = getChildAt(0);
+			measureChild(header, widthMeasureSpec, heightMeasureSpec);
+			finalHeight += header.getMeasuredHeight();
+			
+			View child = getChildAt(1);
+			int childHeight = child.getMeasuredHeight();
+			
+			int footerHeight=0;
+			View footer = getChildAt(2);
+			if(footer!=null){
+				footerHeight = footer.getMeasuredHeight();
+				measureChild(footer, widthMeasureSpec, MeasureSpec.makeMeasureSpec(
+						MeasureSpec.EXACTLY, footerHeight));
+			}
+			measureChild(child, widthMeasureSpec, MeasureSpec.makeMeasureSpec(
+					MeasureSpec.EXACTLY, childHeight - footerHeight));
+			finalHeight += childHeight;
+
 		}
 		setMeasuredDimension(width, finalHeight);
 	}
@@ -421,6 +448,7 @@ public class XRefreshView extends LinearLayout {
 
 	private void updateFooterHeight(int deltaY) {
 		moveView(deltaY);
+		mFooterView.setState(XRefreshViewState.STATE_READY);
 	}
 
 	/**

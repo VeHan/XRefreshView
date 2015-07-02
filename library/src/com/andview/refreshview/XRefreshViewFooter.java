@@ -36,13 +36,13 @@ public class XRefreshViewFooter extends LinearLayout {
 		mProgressBar.setVisibility(View.INVISIBLE);
 		mHintView.setVisibility(View.INVISIBLE);
 		if (state == XRefreshViewState.STATE_READY) {
-			// mHintView.setVisibility(View.VISIBLE);
-			// mHintView.setText(R.string.xrefreshview_footer_hint_ready);
+			 mHintView.setVisibility(View.VISIBLE);
+			 mHintView.setText(R.string.xrefreshview_footer_hint_ready);
 		} else if (state == XRefreshViewState.STATE_LOADING) {
 			mProgressBar.setVisibility(View.VISIBLE);
 		} else {
-			// mHintView.setVisibility(View.VISIBLE);
-			// mHintView.setText(R.string.xrefreshview_footer_hint_normal);
+			 mHintView.setVisibility(View.VISIBLE);
+			 mHintView.setText(R.string.xrefreshview_footer_hint_normal);
 		}
 	}
 
