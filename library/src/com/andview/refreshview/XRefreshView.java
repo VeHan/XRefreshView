@@ -166,7 +166,6 @@ public class XRefreshView extends LinearLayout {
 								+ mHeaderViewHeight);
 						mContentView.setScrollListener();
 						if (mEnablePullLoad) {
-							Log.i("CustomView", "add footView");
 							addView(mFooterView);
 						}
 						// 移除视图树监听器
@@ -199,31 +198,12 @@ public class XRefreshView extends LinearLayout {
 		int width = MeasureSpec.getSize(widthMeasureSpec);
 		int childCount = getChildCount();
 		int finalHeight = 0;
-		if (releaseModeAtBottom == 0) {// 回弹模式
-			for (int i = 0; i < childCount; i++) {
-				View child = getChildAt(i);
-				measureChild(child, widthMeasureSpec, heightMeasureSpec);
+		for (int i = 0; i < childCount; i++) {
+			View child = getChildAt(i);
+			measureChild(child, widthMeasureSpec, heightMeasureSpec);
+			if (i != 2) {
 				finalHeight += child.getMeasuredHeight();
 			}
-		} else {
-			View header = getChildAt(0);
-			measureChild(header, widthMeasureSpec, heightMeasureSpec);
-			finalHeight += header.getMeasuredHeight();
-			
-			View child = getChildAt(1);
-			int childHeight = child.getMeasuredHeight();
-			
-			int footerHeight=0;
-			View footer = getChildAt(2);
-			if(footer!=null){
-				footerHeight = footer.getMeasuredHeight();
-				measureChild(footer, widthMeasureSpec, MeasureSpec.makeMeasureSpec(
-						MeasureSpec.EXACTLY, footerHeight));
-			}
-			measureChild(child, widthMeasureSpec, MeasureSpec.makeMeasureSpec(
-					MeasureSpec.EXACTLY, childHeight - footerHeight));
-			finalHeight += childHeight;
-
 		}
 		setMeasuredDimension(width, finalHeight);
 	}
@@ -233,6 +213,8 @@ public class XRefreshView extends LinearLayout {
 		super.onLayout(changed, l, t, r, b);
 		LogUtils.d("onLayout mHolder.mOffsetY=" + mHolder.mOffsetY);
 		mFootHeight = mFooterView.getMeasuredHeight();
+//		int footOffset = mHolder.mOffsetY < 0 ? -mHolder.mOffsetY : 0;
+//		mFooterView.setPadding(0, 0, 0, -mFootHeight + footOffset);
 		int childCount = getChildCount();
 		int top = getPaddingTop() + mHolder.mOffsetY;
 		for (int i = 0; i < childCount; i++) {
@@ -303,7 +285,7 @@ public class XRefreshView extends LinearLayout {
 			// && !mPullRefreshing && !mPullLoading) {
 			// mRefreshViewListener.onRelease(mHolder.mOffsetY);
 			// }
-			if (mContentView.isTop() && mHolder.hasHeaderPullDown()) {
+			if (mHolder.hasHeaderPullDown()) {
 				// invoke refresh
 				if (mEnablePullRefresh && mHolder.mOffsetY > mHeaderViewHeight) {
 					mPullRefreshing = true;
@@ -313,7 +295,7 @@ public class XRefreshView extends LinearLayout {
 					}
 				}
 				resetHeaderHeight();
-			} else if (mContentView.isBottom() && mHolder.hasFooterPullUp()) {
+			} else if (mHolder.hasFooterPullUp()) {
 				if (mEnablePullLoad) {
 					int offset = 0 - mHolder.mOffsetY - mFootHeight;
 					startScroll(offset, SCROLL_DURATION);
@@ -447,8 +429,8 @@ public class XRefreshView extends LinearLayout {
 	}
 
 	private void updateFooterHeight(int deltaY) {
-		moveView(deltaY);
-		mFooterView.setState(XRefreshViewState.STATE_READY);
+		changeFooterPadding(deltaY);
+		// mFooterView.setState(XRefreshViewState.STATE_READY);
 	}
 
 	/**
@@ -498,8 +480,13 @@ public class XRefreshView extends LinearLayout {
 		mHolder.move(deltaY);
 		mChild.offsetTopAndBottom(deltaY);
 		mHeaderView.offsetTopAndBottom(deltaY);
-		mFooterView.offsetTopAndBottom(deltaY);
+		// mFooterView.offsetTopAndBottom(deltaY);
 		invalidate();
+	}
+
+	public void changeFooterPadding(int offsetY) {
+		mHolder.move(offsetY);
+		mFooterView.setPadding(0, 0, 0, -mFootHeight - mHolder.mOffsetY);
 	}
 
 	@Override
@@ -510,7 +497,11 @@ public class XRefreshView extends LinearLayout {
 			int currentY = mScroller.getCurrY();
 			int offsetY = currentY - lastScrollY;
 			lastScrollY = currentY;
-			moveView(offsetY);
+			if (mHolder.hasFooterPullUp()) {
+				changeFooterPadding(offsetY);
+			} else {
+				moveView(offsetY);
+			}
 
 			LogUtils.d("currentY=" + currentY + ";mHolder.mOffsetY="
 					+ mHolder.mOffsetY);
@@ -567,7 +558,8 @@ public class XRefreshView extends LinearLayout {
 	public void stopLoadMore() {
 		if (mPullLoading == true) {
 			mPullLoading = false;
-			startScroll(-mHolder.mOffsetY, 0);
+			// startScroll(-mHolder.mOffsetY, 0);
+			changeFooterPadding(-mHolder.mOffsetY);
 		}
 	}
 
