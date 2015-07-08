@@ -8,7 +8,6 @@ package com.andview.refreshview;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -47,9 +46,8 @@ public class XRefreshViewFooter extends LinearLayout {
 	}
 
 	public void setBottomMargin(int height) {
-		Log.i("footView", "footView is Visible=" + getVisibility());
-		if (height < 0)
-			return;
+//		if (height < 0)
+//			return;
 		LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) mContentView
 				.getLayoutParams();
 		lp.bottomMargin = height;

@@ -70,10 +70,4 @@ public class GridViewActivity extends Activity {
 			}
 		});
 	}
-
-	@Override
-	protected void onResume() {
-		super.onResume();
-		outView.startRefresh();
-	}
 }

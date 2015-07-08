@@ -7,7 +7,6 @@ public class XRefreshHolder {
 	public void move(int deltaY) {
 		mOffsetY += deltaY;
 	}
-
 	public boolean hasHeaderPullDown() {
 		return mOffsetY > 0;
 	}

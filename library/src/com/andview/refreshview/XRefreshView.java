@@ -121,8 +121,8 @@ public class XRefreshView extends LinearLayout {
 	@Override
 	protected void onFinishInflate() {
 		mChild = mContentView.setContentView(XRefreshView.this.getChildAt(1));
-		mContentView.setContentViewLayoutParams(isHeightMatchParent,
-				isWidthMatchParent);
+//		mContentView.setContentViewLayoutParams(isHeightMatchParent,
+//				isWidthMatchParent);
 		super.onFinishInflate();
 	}
 
@@ -154,6 +154,9 @@ public class XRefreshView extends LinearLayout {
 		addView(mHeaderView);
 
 		mFooterView = new XRefreshViewFooter(context);
+		mFooterView.measure(0, 0);
+		mFootHeight = mFooterView.getMeasuredHeight();
+		mFooterView.setPadding(0, 0, 0, -mFootHeight);
 		this.getViewTreeObserver().addOnGlobalLayoutListener(
 				new OnGlobalLayoutListener() {
 
@@ -167,6 +170,9 @@ public class XRefreshView extends LinearLayout {
 						mContentView.setScrollListener();
 						if (mEnablePullLoad) {
 							addView(mFooterView);
+							mFooterView.measure(0, 0);
+							mFootHeight = mFooterView.getMeasuredHeight();
+							mFooterView.setPadding(0, 0, 0, -mFootHeight);
 						}
 						// 移除视图树监听器
 						removeViewTreeObserver(this);
@@ -187,49 +193,54 @@ public class XRefreshView extends LinearLayout {
 		}
 	}
 
-	/*
-	 * 丈量视图的宽、高。宽度为用户设置的宽度，高度则为header, content view, footer这三个子控件的高度之和。
-	 * 
-	 * @see android.view.View#onMeasure(int, int)
-	 */
-	@Override
-	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-		int width = MeasureSpec.getSize(widthMeasureSpec);
-		int childCount = getChildCount();
-		int finalHeight = 0;
-		for (int i = 0; i < childCount; i++) {
-			View child = getChildAt(i);
-			measureChild(child, widthMeasureSpec, heightMeasureSpec);
-			if (i != 2) {
-				finalHeight += child.getMeasuredHeight();
-			}
-		}
-		setMeasuredDimension(width, finalHeight);
-	}
-
-	@Override
-	protected void onLayout(boolean changed, int l, int t, int r, int b) {
-		super.onLayout(changed, l, t, r, b);
-		LogUtils.d("onLayout mHolder.mOffsetY=" + mHolder.mOffsetY);
-		mFootHeight = mFooterView.getMeasuredHeight();
+//	/*
+//	 * 丈量视图的宽、高。宽度为用户设置的宽度，高度则为header, content view, footer这三个子控件的高度之和。
+//	 * 
+//	 * @see android.view.View#onMeasure(int, int)
+//	 */
+//	@Override
+//	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+//		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+//		int width = MeasureSpec.getSize(widthMeasureSpec);
+//		int childCount = getChildCount();
+//		int finalHeight = 0;
+//		for (int i = 0; i < childCount; i++) {
+//			View child = getChildAt(i);
+//			measureChild(child, widthMeasureSpec, heightMeasureSpec);
+//			if (i != 2) {
+//				finalHeight += child.getMeasuredHeight();
+//			}
+//		}
+//		setMeasuredDimension(width, finalHeight);
+//	}
+//
+//	@Override
+//	protected void onLayout(boolean changed, int l, int t, int r, int b) {
+//		super.onLayout(changed, l, t, r, b);
+//		LogUtils.d("onLayout mHolder.mOffsetY=" + mHolder.mOffsetY);
+//		mFootHeight = mFooterView.getMeasuredHeight();
 //		int footOffset = mHolder.mOffsetY < 0 ? -mHolder.mOffsetY : 0;
-//		mFooterView.setPadding(0, 0, 0, -mFootHeight + footOffset);
-		int childCount = getChildCount();
-		int top = getPaddingTop() + mHolder.mOffsetY;
-		for (int i = 0; i < childCount; i++) {
-			View child = getChildAt(i);
-			if (child == mHeaderView) {
-				// 通过把headerview向上移动一个headerview高度的距离来达到隐藏headerview的效果
-				child.layout(0, top - mHeaderViewHeight,
-						child.getMeasuredWidth(), top);
-			} else {
-				child.layout(0, top, child.getMeasuredWidth(),
-						child.getMeasuredHeight() + top);
-				top += child.getMeasuredHeight();
-			}
-		}
-	}
+//		int childCount = getChildCount();
+//		int top = getPaddingTop();
+//		if (!mHolder.hasFooterPullUp()) {
+//			top += mHolder.mOffsetY;
+//		}
+//		if (!mHolder.hasHeaderPullDown()) {
+//			mFooterView.setPadding(0, 0, 0, -mFootHeight - mHolder.mOffsetY);
+//		}
+//		for (int i = 0; i < childCount; i++) {
+//			View child = getChildAt(i);
+//			if (child == mHeaderView) {
+//				// 通过把headerview向上移动一个headerview高度的距离来达到隐藏headerview的效果
+//				child.layout(0, top - mHeaderViewHeight,
+//						child.getMeasuredWidth(), top);
+//			} else {
+//				child.layout(0, top, child.getMeasuredWidth(),
+//						child.getMeasuredHeight() + top);
+//				top += child.getMeasuredHeight();
+//			}
+//		}
+//	}
 
 	private boolean isIntercepted;
 
@@ -429,7 +440,15 @@ public class XRefreshView extends LinearLayout {
 	}
 
 	private void updateFooterHeight(int deltaY) {
-		changeFooterPadding(deltaY);
+		mHolder.move(deltaY);
+		// int lastBottomMargin = mFooterView.getBottomMargin();
+		int bottomMargin = -mFootHeight - mHolder.mOffsetY;
+//		if (bottomMargin >= -mFootHeight) {
+			mFooterView.setPadding(0, 0, 0, bottomMargin);
+//		} else {
+//			mHolder.mOffsetY = 0;
+//		}
+		LogUtils.i("updateFooterHeight mOffsetY=" + mHolder.mOffsetY);
 		// mFooterView.setState(XRefreshViewState.STATE_READY);
 	}
 
@@ -484,11 +503,6 @@ public class XRefreshView extends LinearLayout {
 		invalidate();
 	}
 
-	public void changeFooterPadding(int offsetY) {
-		mHolder.move(offsetY);
-		mFooterView.setPadding(0, 0, 0, -mFootHeight - mHolder.mOffsetY);
-	}
-
 	@Override
 	public void computeScroll() {
 		super.computeScroll();
@@ -498,7 +512,7 @@ public class XRefreshView extends LinearLayout {
 			int offsetY = currentY - lastScrollY;
 			lastScrollY = currentY;
 			if (mHolder.hasFooterPullUp()) {
-				changeFooterPadding(offsetY);
+				updateFooterHeight(offsetY);
 			} else {
 				moveView(offsetY);
 			}
@@ -559,7 +573,7 @@ public class XRefreshView extends LinearLayout {
 		if (mPullLoading == true) {
 			mPullLoading = false;
 			// startScroll(-mHolder.mOffsetY, 0);
-			changeFooterPadding(-mHolder.mOffsetY);
+			updateFooterHeight(-mHolder.mOffsetY);
 		}
 	}
 
